@@ -9,17 +9,16 @@ public class Main {
 
         userService.createUsersTable();
 
-//        userService.dropUsersTable();
-
         userService.saveUser("Дмитрий", "Сурсин", (byte) 25);
         userService.saveUser("Иван", "Иванов", (byte) 30);
         userService.saveUser("Руслан", "Баженов", (byte) 50);
         userService.saveUser("Виталий", "Гогунский", (byte) 100);
         userService.getAllUsers().forEach(System.out::println);
 
-//        userService.removeUserById(2);
+        userService.removeUserById(2);
 
         userService.cleanUsersTable();
 
+        userService.dropUsersTable();
     }
 }

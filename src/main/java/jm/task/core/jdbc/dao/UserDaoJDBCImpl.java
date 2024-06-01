@@ -22,9 +22,9 @@ public class UserDaoJDBCImpl implements UserDao {
             statement.execute(
                 "CREATE TABLE IF NOT EXISTS users(" +
                     "id BIGSERIAL PRIMARY KEY," +
-                    "name VARCHAR(512)," +
-                    "lastname VARCHAR(512)," +
-                    "age SMALLINT)"
+                    "name VARCHAR(255)," +
+                    "lastname VARCHAR(255)," +
+                    "age SMALLINT);"
             );
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -54,14 +54,16 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void removeUserById(long id) {
-        try (Statement statement = connection.createStatement()) {
-            int rowsAffected = statement.executeUpdate("DELETE FROM users WHERE id = " + id);
-            if (rowsAffected > 0){
-                System.out.println(rowsAffected);
+        try (PreparedStatement statement = connection.prepareStatement(
+            "DELETE FROM users WHERE id=?")) {
+            statement.setLong(1, id);
+
+            if (statement.executeUpdate() > 0) {
                 System.out.println("Удалён пользователь с ID - " + id);
-            }else {
-                System.out.println("Нет пользователя с таким ID - " + id);
+            } else {
+                System.out.println("Нет пользователя с ID - " + id);
             }
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -73,11 +75,12 @@ public class UserDaoJDBCImpl implements UserDao {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet resultSet = statement.executeQuery("SELECT * FROM users")) {
                 while (resultSet.next()) {
+                    Long id = resultSet.getLong("id");
                     String name = resultSet.getString("name");
                     String lastName = resultSet.getString("lastname");
                     byte age = resultSet.getByte("age");
 
-                    User user = new User(name, lastName, age);
+                    User user = new User(id, name, lastName, age);
                     allUsers.add(user);
                 }
             }

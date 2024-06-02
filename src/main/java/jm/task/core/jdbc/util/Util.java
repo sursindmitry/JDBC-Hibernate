@@ -19,27 +19,19 @@ public class Util {
         Properties properties = getProperties();
         loadDriverClass();
 
-        Connection connection = null;
-            try {
-                connection = DriverManager.getConnection(
-                    properties.getProperty("host"),
-                    properties.getProperty("user"),
-                    properties.getProperty("password")
-                );
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-
-        if (connection != null) {
-            return connection;
-        } else {
+        try {
+            return DriverManager.getConnection(
+                properties.getProperty("host"),
+                properties.getProperty("user"),
+                properties.getProperty("password")
+            );
+        } catch (SQLException e) {
             throw new RuntimeException("Вы не смогли подключится к БД проверьте настройки");
         }
     }
 
     public static SessionFactory setUp() {
         Properties properties = getProperties();
-        loadDriverClass();
 
         StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
             .applySetting("hibernate.connection.url", properties.getProperty("hibernate.connection.url"))

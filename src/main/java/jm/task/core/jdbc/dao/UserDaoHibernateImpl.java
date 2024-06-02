@@ -1,6 +1,5 @@
 package jm.task.core.jdbc.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import jm.task.core.jdbc.model.User;
@@ -9,6 +8,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.query.NativeQuery;
+import org.hibernate.query.Query;
 
 public class UserDaoHibernateImpl implements UserDao {
     private final SessionFactory factory;
@@ -23,7 +23,7 @@ public class UserDaoHibernateImpl implements UserDao {
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
-            NativeQuery<?> query = session.createSQLQuery(
+            NativeQuery<?> query = session.createNativeQuery(
                 "CREATE TABLE IF NOT EXISTS users(" +
                     "id BIGSERIAL PRIMARY KEY," +
                     "name VARCHAR(512)," +
@@ -41,18 +41,16 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void dropUsersTable() {
-        Transaction transaction = null;
         try (Session session = factory.openSession()) {
-            transaction = session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
+
             NativeQuery<?> query = session.createNativeQuery(
                 "DROP TABLE IF EXISTS users"
             );
             query.executeUpdate();
+
             transaction.commit();
         } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
             throw new RuntimeException("Не удалось удалить таблицу users", e);
         }
 
@@ -62,17 +60,13 @@ public class UserDaoHibernateImpl implements UserDao {
     public void saveUser(String name, String lastName, byte age) {
         User user = new User(name, lastName, age);
 
-        Transaction transaction = null;
         try (Session session = factory.openSession()) {
-            transaction = session.beginTransaction();
+            session.beginTransaction();
 
             session.save(user);
 
-            transaction.commit();
+            session.getTransaction().commit();
         } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
             throw new RuntimeException("Не удалось добавить пользователя с именем - " + name, e);
         }
     }
@@ -80,9 +74,8 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void removeUserById(long id) {
 
-        Transaction transaction = null;
         try (Session session = factory.openSession()) {
-            transaction = session.beginTransaction();
+            Transaction transaction =  session.beginTransaction();
 
             User user = Optional.ofNullable(session.get(User.class, id))
                 .orElseThrow(() -> new RuntimeException("Нет пользователя с ID - " + id));
@@ -97,15 +90,10 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public List<User> getAllUsers() {
-        Transaction transaction = null;
+
         try (Session session = factory.openSession()) {
-            transaction = session.beginTransaction();
 
-            List<User> allUsers = new ArrayList<>(session.createQuery("FROM User").getResultList());
-
-            transaction.commit();
-
-            return allUsers;
+            return session.createQuery("FROM User", User.class).list();
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при получении пользователей", e);
         }
@@ -113,13 +101,10 @@ public class UserDaoHibernateImpl implements UserDao {
 
     @Override
     public void cleanUsersTable() {
-        Transaction transaction = null;
         try (Session session = factory.openSession()) {
-            transaction = session.beginTransaction();
+            Transaction transaction = session.beginTransaction();
 
-            NativeQuery<?> query = session.createNativeQuery(
-                "TRUNCATE TABLE users RESTART IDENTITY CASCADE"
-            );
+            Query query = session.createQuery("DELETE FROM User");
             query.executeUpdate();
 
             transaction.commit();
